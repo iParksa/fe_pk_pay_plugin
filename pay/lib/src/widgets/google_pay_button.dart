@@ -70,11 +70,6 @@ class GooglePayButton extends PayButton {
             onPressed: _defaultOnPressed(onPressed, paymentItems));
   }
 
-  double get defaultButtonHeight =>
-      kIsWeb ? RawGooglePayButtonWeb.defaultButtonHeight : RawGooglePayButton.defaultButtonHeight;
-  double get minimumButtonWidth =>
-      kIsWeb ? RawGooglePayButtonWeb.minimumButtonWidth : RawGooglePayButton.minimumButtonWidth;
-
   @override
   final List<TargetPlatform> _supportedPlatforms = [
     TargetPlatform.android,

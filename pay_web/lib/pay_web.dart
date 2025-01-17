@@ -7,3 +7,4 @@ import 'package:pay_platform_interface/core/payment_configuration.dart';
 export 'src/pay_web_stub.dart' if (dart.library.html) 'src/pay_web.dart';
 
 part 'src/widgets/google_pay_button.dart';
+part 'src/widgets/apple_pay_button.dart';

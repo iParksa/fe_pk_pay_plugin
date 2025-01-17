@@ -94,7 +94,7 @@ class RawGooglePayButtonWeb extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            type.enumString.toUpperCase(),
+            'Comprar con Google Pay',
             style: TextStyle(
               color: theme == GooglePayButtonThemeWeb.dark ? Colors.white : Colors.black,
             ),
@@ -104,36 +104,10 @@ class RawGooglePayButtonWeb extends StatelessWidget {
     );
   }
 
-  _onPlatformViewCreated(int viewId) {
-    MethodChannel methodChannel = MethodChannel('$viewType/$viewId');
-    methodChannel.setMethodCallHandler((call) async {
-      if (call.method == 'onPressed') onPressed?.call();
-    });
-  }
-
-  static bool get supported => defaultTargetPlatform == TargetPlatform.android;
-}
-
-/// A set of utility methods associated to the [GooglePayButtonTypeWeb] enumeration.
-extension on GooglePayButtonTypeWeb {
-  /// Creates a string representation of the [GooglePayButtonTypeWeb] enumeration.
-  String get enumString => {
-        GooglePayButtonTypeWeb.plain: 'plain',
-        GooglePayButtonTypeWeb.buy: 'buy',
-        GooglePayButtonTypeWeb.donate: 'donate',
-        GooglePayButtonTypeWeb.checkout: 'checkout',
-        GooglePayButtonTypeWeb.book: 'book',
-        GooglePayButtonTypeWeb.subscribe: 'subscribe',
-        GooglePayButtonTypeWeb.pay: 'pay',
-        GooglePayButtonTypeWeb.order: 'order',
-      }[this]!;
-}
-
-/// A set of utility methods associated to the [GooglePayButtonThemeWeb] enumeration.
-extension on GooglePayButtonThemeWeb {
-  /// Creates a string representation of the [GooglePayButtonThemeWeb] enumeration.
-  String get enumString => {
-        GooglePayButtonThemeWeb.dark: 'dark',
-        GooglePayButtonThemeWeb.light: 'light',
-      }[this]!;
+  static bool get supported =>
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS ||
+      defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.linux;
 }

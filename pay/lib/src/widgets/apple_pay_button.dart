@@ -42,7 +42,9 @@ class ApplePayButton extends PayButton {
     required List<PaymentItem> paymentItems,
     double? cornerRadius,
     ApplePayButtonStyle style = ApplePayButtonStyle.black,
+    ApplePayButtonStyleWeb styleWeb = ApplePayButtonStyleWeb.black,
     ApplePayButtonType type = ApplePayButtonType.plain,
+    ApplePayButtonTypeWeb typeWeb = ApplePayButtonTypeWeb.plain,
     super.width = RawApplePayButton.minimumButtonWidth,
     super.height = RawApplePayButton.minimumButtonHeight,
     super.margin = EdgeInsets.zero,
@@ -52,8 +54,17 @@ class ApplePayButton extends PayButton {
     super.loadingIndicator,
   })  : assert(width >= RawApplePayButton.minimumButtonWidth),
         assert(height >= RawApplePayButton.minimumButtonHeight) {
-    _applePayButton = RawApplePayButton(
-        style: style, type: type, cornerRadius: cornerRadius, onPressed: _defaultOnPressed(onPressed, paymentItems));
+    _applePayButton = kIsWeb
+        ? RawApplePayButtonWeb(
+            style: styleWeb,
+            type: typeWeb,
+            cornerRadius: cornerRadius,
+            onPressed: _defaultOnPressed(onPressed, paymentItems))
+        : RawApplePayButton(
+            style: style,
+            type: type,
+            cornerRadius: cornerRadius,
+            onPressed: _defaultOnPressed(onPressed, paymentItems));
   }
 
   @override

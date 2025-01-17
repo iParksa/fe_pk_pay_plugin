@@ -4,7 +4,6 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
             "name": "pay",
             "cwd": "pay",
@@ -107,20 +106,25 @@
         },
         {
             "name": "example",
-            "cwd": "pay\\example",
+            "cwd": "pay/example",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "--web-port",
+                "8080"
+            ]
         },
         {
             "name": "example (profile mode)",
-            "cwd": "pay\\example",
+            "cwd": "pay/example",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
             "name": "example (release mode)",
-            "cwd": "pay\\example",
+            "cwd": "pay/example",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
