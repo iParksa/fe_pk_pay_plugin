@@ -42,7 +42,9 @@ class GooglePayButton extends PayButton {
     required List<PaymentItem> paymentItems,
     int cornerRadius = RawGooglePayButton.defaultButtonHeight ~/ 2,
     GooglePayButtonTheme theme = GooglePayButtonTheme.dark,
+    GooglePayButtonThemeWeb themeWeb = GooglePayButtonThemeWeb.dark,
     GooglePayButtonType type = GooglePayButtonType.buy,
+    GooglePayButtonTypeWeb typeWeb = GooglePayButtonTypeWeb.buy,
     super.width = RawGooglePayButton.minimumButtonWidth,
     super.height = RawGooglePayButton.defaultButtonHeight,
     super.margin = EdgeInsets.zero,
@@ -53,16 +55,33 @@ class GooglePayButton extends PayButton {
   })  : assert(width >= RawGooglePayButton.minimumButtonWidth),
         assert(height >= RawGooglePayButton.defaultButtonHeight),
         super(paymentConfiguration: paymentConfiguration) {
-    _googlePayButton = RawGooglePayButton(
-        paymentConfiguration: paymentConfiguration,
-        cornerRadius: cornerRadius,
-        theme: theme,
-        type: type,
-        onPressed: _defaultOnPressed(onPressed, paymentItems));
+    _googlePayButton = kIsWeb
+        ? RawGooglePayButtonWeb(
+            paymentConfiguration: paymentConfiguration,
+            cornerRadius: cornerRadius,
+            theme: themeWeb,
+            type: typeWeb,
+            onPressed: _defaultOnPressed(onPressed, paymentItems))
+        : RawGooglePayButton(
+            paymentConfiguration: paymentConfiguration,
+            cornerRadius: cornerRadius,
+            theme: theme,
+            type: type,
+            onPressed: _defaultOnPressed(onPressed, paymentItems));
   }
 
+  double get defaultButtonHeight =>
+      kIsWeb ? RawGooglePayButtonWeb.defaultButtonHeight : RawGooglePayButton.defaultButtonHeight;
+  double get minimumButtonWidth =>
+      kIsWeb ? RawGooglePayButtonWeb.minimumButtonWidth : RawGooglePayButton.minimumButtonWidth;
+
   @override
-  final List<TargetPlatform> _supportedPlatforms = [TargetPlatform.android];
+  final List<TargetPlatform> _supportedPlatforms = [
+    TargetPlatform.android,
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+    TargetPlatform.macOS
+  ];
 
   @override
   late final Widget _payButton = _googlePayButton;
@@ -75,18 +94,19 @@ class GooglePayButton extends PayButton {
 }
 
 class _GooglePayButtonState extends _PayButtonState {
-  static const eventChannel =
-      EventChannel('plugins.flutter.io/pay/payment_result');
+  static const eventChannel = EventChannel('plugins.flutter.io/pay/payment_result');
   StreamSubscription<Map<String, dynamic>>? _paymentResultSubscription;
 
   @override
   void _preparePaymentResultStream() {
-    _paymentResultSubscription = eventChannel
-        .receiveBroadcastStream()
-        .cast<String>()
-        .map(jsonDecode)
-        .cast<Map<String, dynamic>>()
-        .listen(widget._deliverPaymentResult, onError: widget._deliverError);
+    if (!kIsWeb) {
+      _paymentResultSubscription = eventChannel
+          .receiveBroadcastStream()
+          .cast<String>()
+          .map(jsonDecode)
+          .cast<Map<String, dynamic>>()
+          .listen(widget._deliverPaymentResult, onError: widget._deliverError);
+    }
   }
 
   @override

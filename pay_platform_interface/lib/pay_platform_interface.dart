@@ -18,6 +18,8 @@ import 'core/payment_item.dart';
 /// A contract that defines the required actions for payment libraries that
 /// implement it.
 abstract class PayPlatform {
+  static PayPlatform? instance;
+
   /// Determines whether the caller can make a payment with a given
   /// configuration.
   ///
@@ -32,6 +34,5 @@ abstract class PayPlatform {
   /// Returns a [Future] with the result of the selection for the
   /// [paymentConfiguration] and [paymentItems] specified.
   Future<Map<String, dynamic>> showPaymentSelector(
-      PaymentConfiguration paymentConfiguration,
-      List<PaymentItem> paymentItems);
+      PaymentConfiguration paymentConfiguration, List<PaymentItem> paymentItems);
 }

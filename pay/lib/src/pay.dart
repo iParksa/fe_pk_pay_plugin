@@ -18,6 +18,10 @@ part of '../pay.dart';
 const supportedProviders = {
   TargetPlatform.android: [PayProvider.google_pay],
   TargetPlatform.iOS: [PayProvider.apple_pay],
+  TargetPlatform.macOS: [PayProvider.google_pay, PayProvider.apple_pay],
+  TargetPlatform.windows: [PayProvider.google_pay],
+  // TargetPlatform.windows: [PayProvider.google_pay, PayProvider.apple_pay],
+  TargetPlatform.linux: [PayProvider.google_pay, PayProvider.apple_pay],
 };
 
 /// High level layer to easily manage cross-platform integrations.
@@ -40,7 +44,7 @@ class Pay {
 
   /// Creates an instance with a dictionary of [_configurations] and
   /// instantiates the [_payPlatform] to communicate with the native platforms.
-  Pay(this._configurations) : _payPlatform = PayMethodChannel();
+  Pay(this._configurations) : _payPlatform = PayPlatform.instance ?? PayMethodChannel();
 
   /// Determines whether a user can pay with the selected [provider].
   ///
@@ -66,16 +70,14 @@ class Pay {
     List<PaymentItem> paymentItems,
   ) async {
     await throwIfProviderIsNotDefined(provider);
-    return _payPlatform.showPaymentSelector(
-        _configurations[provider]!, paymentItems);
+    return _payPlatform.showPaymentSelector(_configurations[provider]!, paymentItems);
   }
 
   /// Verifies that the selected provider has been previously configured or
   /// throws otherwise.
   Future<void> throwIfProviderIsNotDefined(PayProvider provider) async {
     if (!_configurations.containsKey(provider)) {
-      throw ProviderNotConfiguredException(
-          'No configuration has been provided for the provider ($provider)');
+      throw ProviderNotConfiguredException('No configuration has been provided for the provider ($provider)');
     }
   }
 }

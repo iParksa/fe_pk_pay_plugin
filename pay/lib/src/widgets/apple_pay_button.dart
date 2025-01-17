@@ -53,14 +53,11 @@ class ApplePayButton extends PayButton {
   })  : assert(width >= RawApplePayButton.minimumButtonWidth),
         assert(height >= RawApplePayButton.minimumButtonHeight) {
     _applePayButton = RawApplePayButton(
-        style: style,
-        type: type,
-        cornerRadius: cornerRadius,
-        onPressed: _defaultOnPressed(onPressed, paymentItems));
+        style: style, type: type, cornerRadius: cornerRadius, onPressed: _defaultOnPressed(onPressed, paymentItems));
   }
 
   @override
-  final List<TargetPlatform> _supportedPlatforms = [TargetPlatform.iOS];
+  final List<TargetPlatform> _supportedPlatforms = [TargetPlatform.iOS, TargetPlatform.macOS];
 
   @override
   late final Widget _payButton = _applePayButton;

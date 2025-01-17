@@ -82,8 +82,7 @@ abstract class PayButton extends StatefulWidget {
   bool get _collectPaymentResultSynchronously;
 
   /// Determines whether the current platform is supported by the button.
-  bool get _isPlatformSupported =>
-      _supportedPlatforms.contains(defaultTargetPlatform);
+  bool get _isPlatformSupported => _supportedPlatforms.contains(defaultTargetPlatform);
 
   @override
   State<PayButton> createState() => _PayButtonState();
@@ -93,13 +92,11 @@ abstract class PayButton extends StatefulWidget {
   /// This is the default function for tap events. Calls the [onPressed]
   /// function if set, and initiates the payment process with the [paymentItems]
   /// specified.
-  VoidCallback _defaultOnPressed(
-      VoidCallback? onPressed, List<PaymentItem> paymentItems) {
+  VoidCallback _defaultOnPressed(VoidCallback? onPressed, List<PaymentItem> paymentItems) {
     return () async {
       onPressed?.call();
       try {
-        final result =
-            await _payClient.showPaymentSelector(buttonProvider, paymentItems);
+        final result = await _payClient.showPaymentSelector(buttonProvider, paymentItems);
         if (_collectPaymentResultSynchronously) _deliverPaymentResult(result);
       } catch (error) {
         _deliverError(error);
@@ -205,8 +202,6 @@ class ButtonPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return child == null
-        ? const SizedBox.shrink()
-        : Container(margin: margin, child: child);
+    return child == null ? const SizedBox.shrink() : Container(margin: margin, child: child);
   }
 }

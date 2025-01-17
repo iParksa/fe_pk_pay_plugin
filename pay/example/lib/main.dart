@@ -25,7 +25,7 @@ void main() {
 const _paymentItems = [
   PaymentItem(
     label: 'Total',
-    amount: '99.99',
+    amount: '0.5',
     status: PaymentItemStatus.final_price,
   )
 ];
@@ -64,8 +64,7 @@ class _PaySampleAppState extends State<PaySampleApp> {
   @override
   void initState() {
     super.initState();
-    _googlePayConfigFuture =
-        PaymentConfiguration.fromAsset('default_google_pay_config.json');
+    _googlePayConfigFuture = PaymentConfiguration.fromAsset('default_google_pay_config.json');
   }
 
   void onGooglePayResult(paymentResult) {

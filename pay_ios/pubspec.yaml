@@ -16,6 +16,7 @@ name: pay_ios
 description: A plug-in to add support for payments on the iOS side on Flutter applications.
 version: 1.1.0
 homepage: https://github.com/google-pay/flutter-plugin
+publish_to: none
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -30,7 +31,8 @@ flutter:
 dependencies:
   flutter:
     sdk: flutter
-  pay_platform_interface: ^2.0.0
+  pay_platform_interface: 
+    path: ../pay_platform_interface
 
 
 dev_dependencies:
