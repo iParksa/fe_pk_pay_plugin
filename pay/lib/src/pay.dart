@@ -19,8 +19,7 @@ const supportedProviders = {
   TargetPlatform.android: [PayProvider.google_pay],
   TargetPlatform.iOS: [PayProvider.apple_pay],
   TargetPlatform.macOS: [PayProvider.google_pay, PayProvider.apple_pay],
-  TargetPlatform.windows: [PayProvider.google_pay],
-  // TargetPlatform.windows: [PayProvider.google_pay, PayProvider.apple_pay],
+  TargetPlatform.windows: [PayProvider.google_pay, PayProvider.apple_pay],
   TargetPlatform.linux: [PayProvider.google_pay, PayProvider.apple_pay],
 };
 

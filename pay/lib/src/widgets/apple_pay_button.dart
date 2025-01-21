@@ -40,6 +40,7 @@ class ApplePayButton extends PayButton {
     required super.paymentConfiguration,
     super.onPaymentResult,
     required List<PaymentItem> paymentItems,
+    String? applePayWebMerchantValidationUrl,
     double? cornerRadius,
     ApplePayButtonStyle style = ApplePayButtonStyle.black,
     ApplePayButtonStyleWeb styleWeb = ApplePayButtonStyleWeb.black,
@@ -68,7 +69,12 @@ class ApplePayButton extends PayButton {
   }
 
   @override
-  final List<TargetPlatform> _supportedPlatforms = [TargetPlatform.iOS, TargetPlatform.macOS];
+  final List<TargetPlatform> _supportedPlatforms = [
+    TargetPlatform.iOS,
+    TargetPlatform.macOS,
+    TargetPlatform.windows,
+    TargetPlatform.linux
+  ];
 
   @override
   late final Widget _payButton = _applePayButton;

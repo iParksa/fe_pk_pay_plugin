@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'package:flutter/foundation.dart';
 import 'package:pay_platform_interface/core/payment_configuration.dart';
 import 'package:pay_platform_interface/core/payment_item.dart';
 import 'package:pay_platform_interface/pay_platform_interface.dart';
 import 'dart:js' as js;
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:dio/dio.dart';
 
 class PayWebPlugin extends PayPlatform {
   static void registerWith(Registrar registrar) {
@@ -229,13 +232,11 @@ class PayWebPlugin extends PayPlatform {
 
   Future<Map<String, dynamic>> _showPaymentSelectorApple(
       PaymentConfiguration paymentConfiguration, List<PaymentItem> paymentItems) async {
-    if (js.context['ApplePaySession'] == null) {
+    if (_applePaymentsClient == null) {
       throw Exception('Apple Pay JS API is not available.');
     }
 
     try {
-      debugPrint('huete 0');
-
       // Convert PaymentItems to Apple Pay line items
       final lineItems = paymentItems.map((item) {
         return {
@@ -260,118 +261,109 @@ class PayWebPlugin extends PayPlatform {
         'lineItems': js.JsObject.jsify(lineItems),
       });
 
-      debugPrint('huete 1');
-
       // Initialize the ApplePaySession
       final session = js.JsObject(
-        js.context['ApplePaySession'] as js.JsFunction,
+        _applePaymentsClient as js.JsFunction,
         [3, paymentRequest], // Apple Pay API version (3) and request object
       );
-
-      debugPrint('huete 2');
 
       // Completer to handle the payment flow
       Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
 
       // Add event handlers
-      // session.callMethod('onvalidatemerchant', [
-      //   js.allowInterop((event) async {
-      //     debugPrint('onvalidatemerchant event triggered');
-      //     // try {
-      //     //   final validationUrl = event['validationURL'];
-      //     //   final merchantSession = await _validateMerchant(validationUrl);
-      //     //   session.callMethod('completeMerchantValidation', [merchantSession]);
-      //     // } catch (error) {
-      //     //   session.callMethod('abort');
-      //     //   completer.completeError(Exception('Merchant validation failed: $error'));
-      //     // }
-      //   }),
-      // ]);
-
-      // session.callMethod('onpaymentmethodselected', [
-      //   js.allowInterop((event) {
-      //     debugPrint('onpaymentmethodselected event triggered');
-      //     // final update = js.JsObject.jsify({});
-      //     // session.callMethod('completePaymentMethodSelection', [update]);
-      //   }),
-      // ]);
-
-      // session.callMethod('onshippingmethodselected', [
-      //   js.allowInterop((event) {
-      //     debugPrint('onshippingmethodselected event triggered');
-      //     // final update = js.JsObject.jsify({});
-      //     // session.callMethod('completeShippingMethodSelection', [update]);
-      //   }),
-      // ]);
-
-      // session.callMethod('onshippingcontactselected', [
-      //   js.allowInterop((event) {
-      //     debugPrint('onshippingcontactselected event triggered');
-      //     // final update = js.JsObject.jsify({});
-      //     // session.callMethod('completeShippingContactSelection', [update]);
-      //   }),
-      // ]);
-
-      // session.callMethod('onpaymentauthorized', [
-      //   js.allowInterop((event) {
-      //     debugPrint('onpaymentauthorized event triggered');
-      //     //   final result = js.JsObject.jsify({
-      //     //     'status': js.context['ApplePaySession']['STATUS_SUCCESS'],
-      //     //   });
-      //     //   session.callMethod('completePayment', [result]);
-
-      //     //   final paymentData = _convertJsObjectToDart(event as js.JsObject);
-      //     //   completer.complete(paymentData);
-      //   }),
-      // ]);
-
-      // session.callMethod('oncouponcodechanged', [
-      //   js.allowInterop((event) {
-      //     debugPrint('oncouponcodechanged event triggered');
-      //     // Example logic for handling coupon codes (adjust as needed)
-      //     // final update = js.JsObject.jsify({
-      //     //   'newTotal': {
-      //     //     'label': 'testTest',
-      //     //     'amount': '1.99', // Adjust based on coupon logic
-      //     //   },
-      //     //   'newLineItems': lineItems,
-      //     //   'newShippingMethods': [],
-      //     //   'errors': [],
-      //     // });
-      //     // session.callMethod('completeCouponCodeChange', [update]);
-      //   }),
-      // ]);
-
-      // session.callMethod('oncancel', [
-      //   js.allowInterop((event) {
-      //     debugPrint('Apple Pay session was cancelled by the user.');
-      //     // completer.completeError(Exception('Payment cancelled by user'));
-      //   }),
-      // ]);
-
-      session['onvalidatemerchant'] = js.allowInterop((event) {
+      session['onvalidatemerchant'] = js.allowInterop((event) async {
         debugPrint('onvalidatemerchant event triggered');
-        // final result = js.JsObject.jsify({
-        //   'status': js.context['ApplePaySession']['STATUS_SUCCESS'],
-        // });
-        // session.callMethod('completePayment', [result]);
+        try {
+          final validationUrl = ((event as JSObject).getProperty('validationURL'.toJS) as JSString).toDart;
+          final merchantSession = await _validateMerchant(validationUrl);
+          session.callMethod('completeMerchantValidation', [merchantSession]);
+        } catch (error) {
+          session.callMethod('abort');
+          completer.completeError(Exception('Merchant validation failed: $error'));
+        }
       });
 
-      debugPrint('huete 3');
+      // session['onpaymentmethodselected'] = js.allowInterop((event) {
+      //   debugPrint('onpaymentmethodselected event triggered');
+      //   final update = js.JsObject.jsify({});
+      //   session.callMethod('completePaymentMethodSelection', [update]);
+      // });
+
+      // session['onshippingmethodselected'] = js.allowInterop((event) {
+      //   debugPrint('onshippingmethodselected event triggered');
+      //   final update = js.JsObject.jsify({});
+      //   session.callMethod('completeShippingMethodSelection', [update]);
+      // });
+
+      // session['onshippingcontactselected'] = js.allowInterop((event) {
+      //   debugPrint('onshippingcontactselected event triggered');
+      //   final update = js.JsObject.jsify({});
+      //   session.callMethod('completeShippingContactSelection', [update]);
+      // });
+
+      // session['oncouponcodechanged'] = js.allowInterop((event) {
+      //   debugPrint('oncouponcodechanged event triggered');
+
+      //   final update = js.JsObject.jsify({});
+      //   session.callMethod('completeCouponCodeChange', [update]);
+      // });
+
+      session['onpaymentauthorized'] = js.allowInterop((event) async {
+        debugPrint('onpaymentauthorized event triggered');
+        final result = js.JsObject.jsify({
+          'status': _applePaymentsClient!['STATUS_SUCCESS'],
+        });
+        session.callMethod('completePayment', [result]);
+
+        if (event is JSPromise) {
+          final paymentData = await event.toDart;
+          if (paymentData.isA<JSArray>()) {
+            js.context.callMethod('alert', ['Payment data is an array']);
+          } else if (paymentData.isA<JSFunction>()) {
+            js.context.callMethod('alert', ['Payment data is a function']);
+          } else if (paymentData.isA<JSDataView>()) {
+            js.context.callMethod('alert', ['Payment data is a DataView']);
+          } else if (paymentData.isA<JSObject>()) {
+            js.context.callMethod('alert', ['Payment data is an object']);
+          } else {
+            js.context.callMethod('alert', ['Payment data is: $paymentData']);
+          }
+        }
+        completer.complete({});
+      });
+
+      session['oncancel'] = js.allowInterop((event) {
+        debugPrint('Apple Pay session was cancelled by the user.');
+        completer.completeError(Exception('Payment cancelled by user'));
+      });
 
       // Begin the session
       session.callMethod('begin');
-
-      debugPrint('huete 4');
-
-      await completer.future;
-
-      debugPrint('huete 5');
 
       return completer.future;
     } catch (e) {
       debugPrint('Error in showPaymentSelector for Apple Pay: $e');
       throw Exception('Failed to show Apple Pay payment selector: $e');
+    }
+  }
+
+  Future<js.JsObject> _validateMerchant(String? validationUrl) async {
+    const String applePayWebMerchantValidationUrl =
+        'https://r248zsz3-7021.uks1.devtunnels.ms/api/Cajero/ApplePayMerchantValidation';
+
+    final dio = Dio();
+    final response = await dio.post<Map<String, dynamic>>(applePayWebMerchantValidationUrl, data: {
+      'validationUrl': validationUrl,
+      'merchantIdentifier': 'merchant.com.meypar.qrpay',
+      'displayName': 'Meypar QR Pay',
+      'initiative': 'web',
+      'initiativeContext': 'g1bt2wq4-8080.uks1.devtunnels.ms'
+    });
+
+    if (response.statusCode == 200 && response.data != null) {
+      return js.JsObject.jsify(response.data!);
+    } else {
+      throw Exception('Merchant validation failed: ${response.data}');
     }
   }
 }
