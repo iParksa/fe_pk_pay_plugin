@@ -8,6 +8,7 @@ import 'package:pay_platform_interface/pay_platform_interface.dart';
 import 'dart:js' as js;
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:dio/dio.dart';
+import 'package:pay_web/src/js_classes/apple_pay_payment.dart';
 
 class PayWebPlugin extends PayPlatform {
   static void registerWith(Registrar registrar) {
@@ -21,30 +22,18 @@ class PayWebPlugin extends PayPlatform {
     _initializePaymentsClients();
   }
 
-  Future<void> _initializePaymentsClients() async {
-    // Google
-    if (js.context['google'] != null &&
-        js.context['google']['payments'] != null &&
-        js.context['google']['payments']['api'] != null &&
-        js.context['google']['payments']['api']['PaymentsClient'] != null) {
-      // final environment = js.JsObject.jsify({'environment': 'TEST'});
-      _googlePaymentsClient = js.JsObject(
-        js.context['google']['payments']['api']['PaymentsClient'] as js.JsFunction,
-        [js.JsObject.jsify({})],
-      );
-      debugPrint('Google paymentsClient initialized successfully.');
-    } else {
-      debugPrint('Google Pay API is not available.');
-      _googlePaymentsClient = null;
-    }
-
-    // Apple
-    if (js.context['ApplePaySession'] != null) {
-      _applePaymentsClient = js.context['ApplePaySession'] as js.JsObject?;
-      debugPrint('Apple Pay API is available.');
-    } else {
-      debugPrint('Apple Pay API is not available.');
-      _applePaymentsClient = null;
+  @override
+  Future<bool> userCanPay(PaymentConfiguration paymentConfiguration) async {
+    try {
+      switch (paymentConfiguration.provider) {
+        case PayProvider.google_pay:
+          return _userCanPayGoogle(paymentConfiguration);
+        case PayProvider.apple_pay:
+          return _userCanPayApple(paymentConfiguration);
+      }
+    } catch (e) {
+      debugPrint('Error checking userCanPay: $e');
+      return false;
     }
   }
 
@@ -77,44 +66,41 @@ class PayWebPlugin extends PayPlatform {
     return dartMap;
   }
 
-  @override
-  Future<bool> userCanPay(PaymentConfiguration paymentConfiguration) async {
-    try {
-      switch (paymentConfiguration.provider) {
-        case PayProvider.google_pay:
-          return _userCanPayGoogle(paymentConfiguration);
-        case PayProvider.apple_pay:
-          return _userCanPayApple(paymentConfiguration);
-      }
-    } catch (e) {
-      debugPrint('Error checking userCanPay: $e');
-      return false;
+  Future<void> _initializePaymentsClients() async {
+    // Google
+    if (js.context['google'] != null &&
+        js.context['google']['payments'] != null &&
+        js.context['google']['payments']['api'] != null &&
+        js.context['google']['payments']['api']['PaymentsClient'] != null) {
+      // final environment = js.JsObject.jsify({'environment': 'TEST'});
+      _googlePaymentsClient = js.JsObject(
+        js.context['google']['payments']['api']['PaymentsClient'] as js.JsFunction,
+        [js.JsObject.jsify({})],
+      );
+      debugPrint('Google paymentsClient initialized successfully.');
+    } else {
+      debugPrint('Google Pay API is not available.');
+      _googlePaymentsClient = null;
+    }
+
+    // Apple
+    if (js.context['ApplePaySession'] != null) {
+      _applePaymentsClient = js.context['ApplePaySession'] as js.JsObject?;
+      debugPrint('Apple Pay API is available.');
+    } else {
+      debugPrint('Apple Pay API is not available.');
+      _applePaymentsClient = null;
     }
   }
 
   Future<bool> _userCanPayGoogle(PaymentConfiguration paymentConfiguration) async {
     try {
       if (_googlePaymentsClient != null) {
-        // TODO: Sacarlo del paymentConfiguration y hacer el if de Google/Apple
-        final request = js.JsObject.jsify({
-          'allowedPaymentMethods': [
-            {
-              'type': "CARD",
-              'parameters': {
-                'allowedAuthMethods': ["PAN_ONLY", "CRYPTOGRAM_3DS"],
-                'allowedCardNetworks': ["AMEX", "DISCOVER", "INTERAC", "JCB", "MASTERCARD", "VISA"]
-              }
-            }
-          ],
-          'apiVersion': 2,
-          'apiVersionMinor': 0
-        });
+        final request = js.JsObject.jsify(await paymentConfiguration.parameterMap());
 
-        final client = _googlePaymentsClient!;
+        final client = _googlePaymentsClient;
 
-        // final response = await js_util.promiseToFuture(client.callMethod('isReadyToPay', [request]) as Object);
         final jsPromise = client.callMethod('isReadyToPay', [request]);
-        // Return a Dart Future that completes when the JavaScript promise resolves
         Completer<bool> completer = Completer<bool>();
 
         //Handle the promise using `.then()` in Dart
@@ -145,7 +131,7 @@ class PayWebPlugin extends PayPlatform {
   Future<bool> _userCanPayApple(PaymentConfiguration paymentConfiguration) async {
     try {
       if (_applePaymentsClient != null) {
-        final canMakePayments = _applePaymentsClient!.callMethod('canMakePayments');
+        final canMakePayments = _applePaymentsClient.callMethod('canMakePayments');
 
         return canMakePayments == true;
       } else {
@@ -166,44 +152,21 @@ class PayWebPlugin extends PayPlatform {
     try {
       // Build the transactionInfo object from the provided paymentItems
       final transactionInfo = {
-        'countryCode': 'ES',
-        'currencyCode': 'EUR',
         'totalPriceStatus': 'FINAL', // Indicates the total price is final
         'totalPrice': paymentItems
             .fold<double>(0.0, (sum, item) => sum + (double.tryParse(item.amount) ?? 0.0))
             .toStringAsFixed(2), // Calculate the total price
       };
 
-      // Create the payment data request object
-      final paymentDataRequest = js.JsObject.jsify({
-        'apiVersion': 2,
-        'apiVersionMinor': 0,
-        'allowedPaymentMethods': [
-          {
-            'type': "CARD",
-            'parameters': {
-              'allowedAuthMethods': ["PAN_ONLY", "CRYPTOGRAM_3DS"],
-              'allowedCardNetworks': ["AMEX", "DISCOVER", "INTERAC", "JCB", "MASTERCARD", "VISA"],
-            },
-            'tokenizationSpecification': {
-              'type': 'PAYMENT_GATEWAY',
-              'parameters': {
-                'gateway': 'example',
-                'gatewayMerchantId': 'gatewayMerchantId',
-              }
-            }
-          }
-        ],
-        'transactionInfo': transactionInfo,
-        'merchantInfo': {
-          'merchantName': 'Example Merchant Name',
-          // Optionally include merchantId if available for production
-          // 'merchantId': paymentConfiguration.merchantId,
-        }
-      });
+      final paymentDataRequest = await paymentConfiguration.parameterMap();
+      if (!paymentDataRequest.containsKey('transactionInfo')) {
+        paymentDataRequest['transactionInfo'] = transactionInfo;
+      } else {
+        (paymentDataRequest['transactionInfo'] as Map<String, dynamic>).addAll(transactionInfo);
+      }
 
       // Call the `loadPaymentData` method
-      final jsPromise = _googlePaymentsClient!.callMethod('loadPaymentData', [paymentDataRequest]);
+      final jsPromise = _googlePaymentsClient.callMethod('loadPaymentData', [js.JsObject.jsify(paymentDataRequest)]);
 
       // Handle the promise using a completer
       Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
@@ -237,34 +200,27 @@ class PayWebPlugin extends PayPlatform {
     }
 
     try {
-      // Convert PaymentItems to Apple Pay line items
-      final lineItems = paymentItems.map((item) {
-        return {
-          'label': item.label,
-          'amount': item.amount,
-        };
-      }).toList();
+      final paymentRequest = await paymentConfiguration.parameterMap();
 
-      // Create the payment request object
-      final paymentRequest = js.JsObject.jsify({
-        'countryCode': 'ES',
-        'currencyCode': 'EUR',
-        'merchantCapabilities': ['supports3DS'], // Add other capabilities as needed
-        'supportedNetworks': ['amex', 'discover', 'masterCard', 'visa'], // Customize as needed
-        'total': {
-          'label': 'Test',
-          'type': 'final',
-          'amount': paymentItems
-              .fold<double>(0.0, (sum, item) => sum + (double.tryParse(item.amount) ?? 0.0))
-              .toStringAsFixed(2),
-        },
-        'lineItems': js.JsObject.jsify(lineItems),
-      });
+      if (!paymentRequest.containsKey('webMerchantValidationUrl')) {
+        throw Exception('Apple Pay configurations must include a validationURL.');
+      }
+
+      paymentRequest['total'] = {
+        'label': 'Total',
+        'type': 'final_price',
+        'amount': paymentItems
+            .fold<double>(0.0, (sum, item) => sum + (double.tryParse(item.amount) ?? 0.0))
+            .toStringAsFixed(2),
+      };
+      paymentRequest['lineItems'] = paymentItems.map((item) {
+        return {'label': item.label, 'amount': item.amount, 'type': 'final'};
+      }).toList();
 
       // Initialize the ApplePaySession
       final session = js.JsObject(
         _applePaymentsClient as js.JsFunction,
-        [3, paymentRequest], // Apple Pay API version (3) and request object
+        [3, js.JsObject.jsify(paymentRequest)], // Apple Pay API version (3) and request object
       );
 
       // Completer to handle the payment flow
@@ -275,7 +231,8 @@ class PayWebPlugin extends PayPlatform {
         debugPrint('onvalidatemerchant event triggered');
         try {
           final validationUrl = ((event as JSObject).getProperty('validationURL'.toJS) as JSString).toDart;
-          final merchantSession = await _validateMerchant(validationUrl);
+          final merchantSession =
+              await _validateMerchant(paymentRequest['webMerchantValidationUrl'].toString(), validationUrl);
           session.callMethod('completeMerchantValidation', [merchantSession]);
         } catch (error) {
           session.callMethod('abort');
@@ -283,53 +240,22 @@ class PayWebPlugin extends PayPlatform {
         }
       });
 
-      // session['onpaymentmethodselected'] = js.allowInterop((event) {
-      //   debugPrint('onpaymentmethodselected event triggered');
-      //   final update = js.JsObject.jsify({});
-      //   session.callMethod('completePaymentMethodSelection', [update]);
-      // });
+      session['onpaymentauthorized'] = js.allowInterop((ApplePayPaymentAuthorizedEvent event) async {
+        try {
+          debugPrint('onpaymentauthorized event triggered');
+          final result = js.JsObject.jsify({
+            'status': session['STATUS_SUCCESS'],
+          });
+          session.callMethod('completePayment', [result]);
 
-      // session['onshippingmethodselected'] = js.allowInterop((event) {
-      //   debugPrint('onshippingmethodselected event triggered');
-      //   final update = js.JsObject.jsify({});
-      //   session.callMethod('completeShippingMethodSelection', [update]);
-      // });
+          js.context.callMethod('alert', [event.payment.token.toJson().toString()]);
 
-      // session['onshippingcontactselected'] = js.allowInterop((event) {
-      //   debugPrint('onshippingcontactselected event triggered');
-      //   final update = js.JsObject.jsify({});
-      //   session.callMethod('completeShippingContactSelection', [update]);
-      // });
-
-      // session['oncouponcodechanged'] = js.allowInterop((event) {
-      //   debugPrint('oncouponcodechanged event triggered');
-
-      //   final update = js.JsObject.jsify({});
-      //   session.callMethod('completeCouponCodeChange', [update]);
-      // });
-
-      session['onpaymentauthorized'] = js.allowInterop((event) async {
-        debugPrint('onpaymentauthorized event triggered');
-        final result = js.JsObject.jsify({
-          'status': _applePaymentsClient!['STATUS_SUCCESS'],
-        });
-        session.callMethod('completePayment', [result]);
-
-        if (event is JSPromise) {
-          final paymentData = await event.toDart;
-          if (paymentData.isA<JSArray>()) {
-            js.context.callMethod('alert', ['Payment data is an array']);
-          } else if (paymentData.isA<JSFunction>()) {
-            js.context.callMethod('alert', ['Payment data is a function']);
-          } else if (paymentData.isA<JSDataView>()) {
-            js.context.callMethod('alert', ['Payment data is a DataView']);
-          } else if (paymentData.isA<JSObject>()) {
-            js.context.callMethod('alert', ['Payment data is an object']);
-          } else {
-            js.context.callMethod('alert', ['Payment data is: $paymentData']);
-          }
+          completer.complete(event.payment.token.toJson());
+        } catch (e) {
+          debugPrint('Error in onpaymentauthorized: $e');
+          session.callMethod('abort');
+          completer.completeError(Exception('Payment authorized failed: $e'));
         }
-        completer.complete({});
       });
 
       session['oncancel'] = js.allowInterop((event) {
@@ -347,10 +273,7 @@ class PayWebPlugin extends PayPlatform {
     }
   }
 
-  Future<js.JsObject> _validateMerchant(String? validationUrl) async {
-    const String applePayWebMerchantValidationUrl =
-        'https://r248zsz3-7021.uks1.devtunnels.ms/api/Cajero/ApplePayMerchantValidation';
-
+  Future<js.JsObject> _validateMerchant(String applePayWebMerchantValidationUrl, String? validationUrl) async {
     final dio = Dio();
     final response = await dio.post<Map<String, dynamic>>(applePayWebMerchantValidationUrl, data: {
       'validationUrl': validationUrl,
