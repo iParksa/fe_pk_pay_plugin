@@ -24,10 +24,6 @@ enum GooglePayButtonThemeWeb {
 ///   onPressed: () => print('Button pressed'));
 /// ```
 class RawGooglePayButtonWeb extends StatelessWidget {
-  /// The payment configuration for the button to show the last 4 digits of a
-  /// pre-selected card
-  final PaymentConfiguration _paymentConfiguration;
-
   /// The default width for the Google Pay Button.
   static const double minimumButtonWidth = 168;
 
@@ -65,8 +61,7 @@ class RawGooglePayButtonWeb extends StatelessWidget {
     this.theme = GooglePayButtonThemeWeb.dark,
     this.type = GooglePayButtonTypeWeb.buy,
     this.gestureRecognizers = const <Factory<OneSequenceGestureRecognizer>>{},
-  })  : _paymentConfiguration = paymentConfiguration,
-        constraints = const BoxConstraints.tightFor(
+  }) : constraints = const BoxConstraints.tightFor(
           width: minimumButtonWidth,
           height: defaultButtonHeight,
         ) {
@@ -92,13 +87,13 @@ class RawGooglePayButtonWeb extends StatelessWidget {
           color: theme == GooglePayButtonThemeWeb.dark ? Colors.black : Colors.white,
           borderRadius: BorderRadius.circular(cornerRadius.toDouble()),
         ),
-        child: Center(
-          child: Text(
-            'Comprar con Google Pay',
-            style: TextStyle(
-              color: theme == GooglePayButtonThemeWeb.dark ? Colors.white : Colors.black,
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          child: Center(
+              child: Image.asset(
+            'assets/images/google-pay_${theme == GooglePayButtonThemeWeb.dark ? "light" : "dark"}.png',
+            package: 'pay_web',
+          )),
         ),
       ),
     );
