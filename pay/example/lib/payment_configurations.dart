@@ -26,14 +26,14 @@ library;
 import 'package:pay/pay.dart';
 
 /// Sample [PaymentConfiguration] for Apple Pay
-final defaultApplePayConfig =
-    PaymentConfiguration.fromJsonString(defaultApplePay);
+final defaultApplePayConfig = PaymentConfiguration.fromJsonString(defaultApplePay);
 
 /// Sample configuration for Apple Pay. Contains the same content as the file
 /// under `assets/default_payment_profile_apple_pay.json`.
 const String defaultApplePay = '''{
   "provider": "apple_pay",
   "data": {
+    "webMerchantValidationUrl": "https://example.com/apple-pay-merchant-validation",
     "merchantIdentifier": "merchant.com.sams.fish",
     "displayName": "Sam's Fish",
     "merchantCapabilities": ["3DS", "debit", "credit"],
@@ -66,8 +66,7 @@ const String defaultApplePay = '''{
 }''';
 
 /// Sample [PaymentConfiguration] for Google Pay
-final defaultGooglePayConfig =
-    PaymentConfiguration.fromJsonString(defaultGooglePay);
+final defaultGooglePayConfig = PaymentConfiguration.fromJsonString(defaultGooglePay);
 
 /// Sample configuration for Google Pay. Contains the same content as the file
 /// under `assets/default_payment_profile_google_pay.json`.

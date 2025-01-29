@@ -62,10 +62,10 @@ class RawApplePayButtonWeb extends StatelessWidget {
   static const double minimumButtonWidth = 100;
 
   /// The default height for the Apple Pay Button.
-  static const double minimumButtonHeight = 30;
+  static const double minimumButtonHeight = 45;
 
   /// The default height for the Apple Pay Button.
-  static const double defaultButtonHeight = 48;
+  static const double defaultButtonHeight = 60;
 
   /// The constraints used to limit the size of the button.
   final BoxConstraints constraints;
@@ -118,7 +118,7 @@ class RawApplePayButtonWeb extends StatelessWidget {
           borderRadius: BorderRadius.circular(cornerRadius?.toDouble() ?? 1),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 18.0),
           child: Center(
             child: Image.asset(
               'assets/images/apple-pay_${style == ApplePayButtonStyleWeb.black ? "light" : "dark"}.png',

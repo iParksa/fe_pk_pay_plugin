@@ -1,6 +1,7 @@
 {
   "provider": "apple_pay",
   "data": {
+    "webMerchantValidationUrl": "https://example.com/apple-pay-merchant-validation",
     "merchantIdentifier": "merchant.com.sams.fish",
     "displayName": "Sam's Fish",
     "merchantCapabilities": ["3DS", "debit", "credit"],

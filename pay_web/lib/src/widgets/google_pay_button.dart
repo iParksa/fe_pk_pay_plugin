@@ -25,10 +25,10 @@ enum GooglePayButtonThemeWeb {
 /// ```
 class RawGooglePayButtonWeb extends StatelessWidget {
   /// The default width for the Google Pay Button.
-  static const double minimumButtonWidth = 168;
+  static const double minimumButtonWidth = 175;
 
   /// The default height for the Google Pay Button.
-  static const double defaultButtonHeight = 48;
+  static const double defaultButtonHeight = 60;
 
   /// The constraints used to limit the size of the button.
   final BoxConstraints constraints;
@@ -88,7 +88,7 @@ class RawGooglePayButtonWeb extends StatelessWidget {
           borderRadius: BorderRadius.circular(cornerRadius.toDouble()),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 18.0),
           child: Center(
               child: Image.asset(
             'assets/images/google-pay_${theme == GooglePayButtonThemeWeb.dark ? "light" : "dark"}.png',
