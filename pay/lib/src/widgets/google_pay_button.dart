@@ -49,7 +49,7 @@ class GooglePayButton extends PayButton {
     super.width = kIsWeb ? RawGooglePayButtonWeb.minimumButtonWidth : RawGooglePayButton.minimumButtonWidth,
     super.height = kIsWeb ? RawGooglePayButtonWeb.defaultButtonHeight : RawGooglePayButton.defaultButtonHeight,
     super.margin = EdgeInsets.zero,
-    VoidCallback? onPressed,
+    bool Function()? onPressed,
     super.onError,
     super.childOnError,
     super.loadingIndicator,

@@ -50,7 +50,7 @@ class ApplePayButton extends PayButton {
     super.width = kIsWeb ? RawApplePayButtonWeb.minimumButtonWidth : RawApplePayButton.minimumButtonWidth,
     super.height = kIsWeb ? RawApplePayButtonWeb.defaultButtonHeight : RawApplePayButton.minimumButtonHeight,
     super.margin = EdgeInsets.zero,
-    VoidCallback? onPressed,
+    bool Function()? beforePay,
     super.onError,
     super.childOnError,
     super.loadingIndicator,
@@ -61,12 +61,12 @@ class ApplePayButton extends PayButton {
             style: styleWeb,
             type: typeWeb,
             cornerRadius: cornerRadius,
-            onPressed: _defaultOnPressed(onPressed, paymentItems))
+            onPressed: _defaultOnPressed(beforePay, paymentItems))
         : RawApplePayButton(
             style: style,
             type: type,
             cornerRadius: cornerRadius,
-            onPressed: _defaultOnPressed(onPressed, paymentItems));
+            onPressed: _defaultOnPressed(beforePay, paymentItems));
   }
 
   @override
