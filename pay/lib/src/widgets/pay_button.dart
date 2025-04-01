@@ -92,9 +92,9 @@ abstract class PayButton extends StatefulWidget {
   /// This is the default function for tap events. Calls the [onPressed]
   /// function if set, and initiates the payment process with the [paymentItems]
   /// specified.
-  VoidCallback _defaultOnPressed(bool Function()? onPressed, List<PaymentItem> paymentItems) {
+  VoidCallback _defaultOnPressed(Future<bool> Function()? onPressed, List<PaymentItem> paymentItems) {
     return () async {
-      bool ok = onPressed?.call() ?? true;
+      bool ok = onPressed == null ? true : (await onPressed());
       if (!ok) return;
       try {
         final result = await _payClient.showPaymentSelector(buttonProvider, paymentItems);

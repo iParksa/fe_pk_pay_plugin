@@ -49,7 +49,7 @@ class GooglePayButton extends PayButton {
     super.width = kIsWeb ? RawGooglePayButtonWeb.minimumButtonWidth : RawGooglePayButton.minimumButtonWidth,
     super.height = kIsWeb ? RawGooglePayButtonWeb.defaultButtonHeight : RawGooglePayButton.defaultButtonHeight,
     super.margin = EdgeInsets.zero,
-    bool Function()? onPressed,
+    Future<bool> Function()? beforePay,
     super.onError,
     super.childOnError,
     super.loadingIndicator,
@@ -62,13 +62,13 @@ class GooglePayButton extends PayButton {
             cornerRadius: cornerRadius,
             theme: themeWeb,
             type: typeWeb,
-            onPressed: _defaultOnPressed(onPressed, paymentItems))
+            onPressed: _defaultOnPressed(beforePay, paymentItems))
         : RawGooglePayButton(
             paymentConfiguration: paymentConfiguration,
             cornerRadius: cornerRadius,
             theme: theme,
             type: type,
-            onPressed: _defaultOnPressed(onPressed, paymentItems));
+            onPressed: _defaultOnPressed(beforePay, paymentItems));
   }
 
   @override

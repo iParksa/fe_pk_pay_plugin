@@ -50,7 +50,7 @@ class ApplePayButton extends PayButton {
     super.width = kIsWeb ? RawApplePayButtonWeb.minimumButtonWidth : RawApplePayButton.minimumButtonWidth,
     super.height = kIsWeb ? RawApplePayButtonWeb.defaultButtonHeight : RawApplePayButton.minimumButtonHeight,
     super.margin = EdgeInsets.zero,
-    bool Function()? beforePay,
+    Future<bool> Function()? beforePay,
     super.onError,
     super.childOnError,
     super.loadingIndicator,
