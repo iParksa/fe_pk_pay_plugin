@@ -15,8 +15,8 @@ class PayWebPlugin extends PayPlatform {
     PayPlatform.instance = PayWebPlugin();
   }
 
-  late final js.JsObject? _googlePaymentsClient;
-  late final js.JsObject? _applePaymentsClient;
+  late final bool _googlePaymentsAvailable;
+  late final bool _applePaymentsAvailable;
 
   PayWebPlugin() {
     _initializePaymentsClients();
@@ -73,32 +73,36 @@ class PayWebPlugin extends PayPlatform {
         js.context['google']['payments']['api'] != null &&
         js.context['google']['payments']['api']['PaymentsClient'] != null) {
       // final environment = js.JsObject.jsify({'environment': 'TEST'});
-      _googlePaymentsClient = js.JsObject(
-        js.context['google']['payments']['api']['PaymentsClient'] as js.JsFunction,
-        [js.JsObject.jsify({})],
-      );
-      debugPrint('Google paymentsClient initialized successfully.');
+      _googlePaymentsAvailable = true;
+      debugPrint('Google Pay API is available.');
     } else {
+      _googlePaymentsAvailable = false;
       debugPrint('Google Pay API is not available.');
-      _googlePaymentsClient = null;
     }
 
     // Apple
     if (js.context['ApplePaySession'] != null) {
-      _applePaymentsClient = js.context['ApplePaySession'] as js.JsObject?;
+      _applePaymentsAvailable = true;
       debugPrint('Apple Pay API is available.');
     } else {
+      _applePaymentsAvailable = false;
       debugPrint('Apple Pay API is not available.');
-      _applePaymentsClient = null;
     }
   }
 
   Future<bool> _userCanPayGoogle(PaymentConfiguration paymentConfiguration) async {
     try {
-      if (_googlePaymentsClient != null) {
-        final request = js.JsObject.jsify(await paymentConfiguration.parameterMap());
+      if (_googlePaymentsAvailable) {
+        final payConfigMap = await paymentConfiguration.parameterMap();
+        final request = js.JsObject.jsify(payConfigMap);
 
-        final client = _googlePaymentsClient;
+        final environment = js.JsObject.jsify(
+            {'environment': payConfigMap.containsKey('environment') ? payConfigMap['environment'] : 'TEST'});
+
+        final client = js.JsObject(
+          js.context['google']['payments']['api']['PaymentsClient'] as js.JsFunction,
+          [environment],
+        );
 
         final jsPromise = client.callMethod('isReadyToPay', [request]);
         Completer<bool> completer = Completer<bool>();
@@ -130,8 +134,10 @@ class PayWebPlugin extends PayPlatform {
 
   Future<bool> _userCanPayApple(PaymentConfiguration paymentConfiguration) async {
     try {
-      if (_applePaymentsClient != null) {
-        final canMakePayments = _applePaymentsClient.callMethod('canMakePayments');
+      if (_applePaymentsAvailable) {
+        final client = js.context['ApplePaySession'] as js.JsObject;
+
+        final canMakePayments = client.callMethod('canMakePayments');
 
         return canMakePayments == true;
       } else {
@@ -145,8 +151,8 @@ class PayWebPlugin extends PayPlatform {
 
   Future<Map<String, dynamic>> _showPaymentSelectorGoogle(
       PaymentConfiguration paymentConfiguration, List<PaymentItem> paymentItems) async {
-    if (_googlePaymentsClient == null) {
-      throw Exception('Google Pay API is not available or PaymentsClient is not initialized.');
+    if (!_googlePaymentsAvailable) {
+      throw Exception('Google Pay API is not available.');
     }
 
     try {
@@ -165,8 +171,16 @@ class PayWebPlugin extends PayPlatform {
         (paymentDataRequest['transactionInfo'] as Map<String, dynamic>).addAll(transactionInfo);
       }
 
+      final environment = js.JsObject.jsify(
+          {'environment': paymentDataRequest.containsKey('environment') ? paymentDataRequest['environment'] : 'TEST'});
+
+      final client = js.JsObject(
+        js.context['google']['payments']['api']['PaymentsClient'] as js.JsFunction,
+        [environment],
+      );
+
       // Call the `loadPaymentData` method
-      final jsPromise = _googlePaymentsClient.callMethod('loadPaymentData', [js.JsObject.jsify(paymentDataRequest)]);
+      final jsPromise = client.callMethod('loadPaymentData', [js.JsObject.jsify(paymentDataRequest)]);
 
       // Handle the promise using a completer
       Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
@@ -195,7 +209,7 @@ class PayWebPlugin extends PayPlatform {
 
   Future<Map<String, dynamic>> _showPaymentSelectorApple(
       PaymentConfiguration paymentConfiguration, List<PaymentItem> paymentItems) async {
-    if (_applePaymentsClient == null) {
+    if (!_applePaymentsAvailable) {
       throw Exception('Apple Pay JS API is not available.');
     }
 
@@ -219,7 +233,7 @@ class PayWebPlugin extends PayPlatform {
 
       // Initialize the ApplePaySession
       final session = js.JsObject(
-        _applePaymentsClient as js.JsFunction,
+        js.context['ApplePaySession'] as js.JsFunction,
         [3, js.JsObject.jsify(paymentRequest)], // Apple Pay API version (3) and request object
       );
 
