@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:js_interop';
-import 'dart:js_interop_unsafe';
 import 'package:flutter/foundation.dart';
 import 'package:pay_platform_interface/core/payment_configuration.dart';
 import 'package:pay_platform_interface/core/payment_item.dart';
@@ -220,21 +218,25 @@ class PayWebPlugin extends PayPlatform {
         throw Exception('Apple Pay configurations must include a validationURL.');
       }
 
-      paymentRequest['total'] = {
-        'label': 'Total',
-        'type': 'final_price',
-        'amount': paymentItems
-            .fold<double>(0.0, (sum, item) => sum + (double.tryParse(item.amount) ?? 0.0))
-            .toStringAsFixed(2),
+      final paramsData = {
+        "merchantCapabilities": ["supports3DS", "supportsCredit", "supportsDebit"],
+        "supportedNetworks": paymentRequest["supportedNetworks"],
+        "countryCode": paymentRequest["countryCode"], // Codi de país
+        "currencyCode": paymentRequest["currencyCode"], // Codi de moneda
+        "total": {
+          'label': paymentItems.first.label,
+          'amount': paymentItems
+              .fold<double>(0.0, (sum, item) => sum + (double.tryParse(item.amount) ?? 0.0))
+              .toStringAsFixed(2),
+        }
       };
-      paymentRequest['lineItems'] = paymentItems.map((item) {
-        return {'label': item.label, 'amount': item.amount, 'type': 'final'};
-      }).toList();
+      //debugPrint(paramsData.toString());
+      final paymentDataRequest = js.JsObject.jsify(paramsData);
 
       // Initialize the ApplePaySession
       final session = js.JsObject(
         js.context['ApplePaySession'] as js.JsFunction,
-        [3, js.JsObject.jsify(paymentRequest)], // Apple Pay API version (3) and request object
+        [3, paymentDataRequest], // Apple Pay API version (3) and request object
       );
 
       // Completer to handle the payment flow
@@ -242,13 +244,12 @@ class PayWebPlugin extends PayPlatform {
 
       // Add event handlers
       session['onvalidatemerchant'] = js.allowInterop((event) async {
-        debugPrint('onvalidatemerchant event triggered');
         try {
-          final validationUrl = ((event as JSObject).getProperty('validationURL'.toJS) as JSString).toDart;
-          final merchantSession =
-              await _validateMerchant(paymentRequest['webMerchantValidationUrl'].toString(), validationUrl);
+          final validationUrl = js.JsObject.fromBrowserObject(event as js.JsObject)['validationURL'] as String?;
+          final merchantSession = await _validateMerchant(paymentRequest, validationUrl);
           session.callMethod('completeMerchantValidation', [merchantSession]);
         } catch (error) {
+          debugPrint('Error in onvalidatemerchant: $error');
           session.callMethod('abort');
           completer.completeError(Exception('Merchant validation failed: $error'));
         }
@@ -256,7 +257,6 @@ class PayWebPlugin extends PayPlatform {
 
       session['onpaymentauthorized'] = js.allowInterop((ApplePayPaymentAuthorizedEvent event) async {
         try {
-          debugPrint('onpaymentauthorized event triggered');
           final result = js.JsObject.jsify({
             'status': session['STATUS_SUCCESS'],
           });
@@ -279,7 +279,6 @@ class PayWebPlugin extends PayPlatform {
 
       // Begin the session
       session.callMethod('begin');
-
       return completer.future;
     } catch (e) {
       debugPrint('Error in showPaymentSelector for Apple Pay: $e');
@@ -287,19 +286,20 @@ class PayWebPlugin extends PayPlatform {
     }
   }
 
-  Future<js.JsObject> _validateMerchant(String applePayWebMerchantValidationUrl, String? validationUrl) async {
+  Future<js.JsObject> _validateMerchant(Map<String, dynamic> params, String? validationUrl) async {
     final dio = Dio();
-    final response = await dio.post<Map<String, dynamic>>(applePayWebMerchantValidationUrl, data: {
+    final response = await dio.post<Map<String, dynamic>>(params["webMerchantValidationUrl"].toString(), data: {
       'validationUrl': validationUrl,
-      'merchantIdentifier': 'merchant.com.meypar.qrpay',
-      'displayName': 'Meypar QR Pay',
+      'merchantIdentifier': params["merchantIdentifier"],
+      'displayName': params["displayName"],
       'initiative': 'web',
-      'initiativeContext': 'g1bt2wq4-8080.uks1.devtunnels.ms'
+      'initiativeContext': params["webMerchantDomain"],
     });
 
     if (response.statusCode == 200 && response.data != null) {
       return js.JsObject.jsify(response.data!);
     } else {
+      debugPrint('Merchant validation failed: ${response.statusCode} - ${response.data}');
       throw Exception('Merchant validation failed: ${response.data}');
     }
   }
