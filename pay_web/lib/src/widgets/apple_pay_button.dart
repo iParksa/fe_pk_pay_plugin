@@ -118,7 +118,7 @@ class RawApplePayButtonWeb extends StatelessWidget {
           borderRadius: BorderRadius.circular(cornerRadius?.toDouble() ?? 1),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 18.0),
+          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
           child: Center(
             child: Image.asset(
               'assets/images/apple-pay_${style == ApplePayButtonStyleWeb.black ? "light" : "dark"}.png',
