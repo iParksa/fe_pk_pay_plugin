@@ -85,7 +85,7 @@ class _PayAdvancedSampleAppState extends State<PayAdvancedSampleApp> {
   }
 
   final bool _collectPaymentResultSynchronously =
-      defaultTargetPlatform == TargetPlatform.iOS;
+      defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS || kIsWeb;
 
   @override
   void initState() {
@@ -99,16 +99,13 @@ class _PayAdvancedSampleAppState extends State<PayAdvancedSampleApp> {
     _canPayAppleFuture = widget.payClient.userCanPay(PayProvider.apple_pay);
   }
 
-  void _onGooglePayPressed() =>
-      _showPaymentSelectorForProvider(PayProvider.google_pay);
+  void _onGooglePayPressed() => _showPaymentSelectorForProvider(PayProvider.google_pay);
 
-  void _onApplePayPressed() =>
-      _showPaymentSelectorForProvider(PayProvider.apple_pay);
+  void _onApplePayPressed() => _showPaymentSelectorForProvider(PayProvider.apple_pay);
 
   void _showPaymentSelectorForProvider(PayProvider provider) async {
     try {
-      final result =
-          await widget.payClient.showPaymentSelector(provider, _paymentItems);
+      final result = await widget.payClient.showPaymentSelector(provider, _paymentItems);
       if (_collectPaymentResultSynchronously) debugPrint(result.toString());
     } catch (error) {
       debugPrint(error.toString());
@@ -181,8 +178,7 @@ class _PayAdvancedSampleAppState extends State<PayAdvancedSampleApp> {
               if (snapshot.connectionState == ConnectionState.done) {
                 if (snapshot.data == true) {
                   return RawGooglePayButton(
-                      paymentConfiguration:
-                          payment_configurations.defaultGooglePayConfig,
+                      paymentConfiguration: payment_configurations.defaultGooglePayConfig,
                       type: GooglePayButtonType.buy,
                       onPressed: _onGooglePayPressed);
                 } else {
@@ -204,9 +200,7 @@ class _PayAdvancedSampleAppState extends State<PayAdvancedSampleApp> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
                 if (snapshot.data == true) {
-                  return RawApplePayButton(
-                      type: ApplePayButtonType.buy,
-                      onPressed: _onApplePayPressed);
+                  return RawApplePayButton(type: ApplePayButtonType.buy, onPressed: _onApplePayPressed);
                 } else {
                   // userCanPay returned false
                   // Consider showing an alternative payment method

@@ -2,6 +2,12 @@ import 'dart:js_interop';
 
 extension type ApplePayPaymentAuthorizedEvent._(JSObject _) implements JSObject {
   external ApplePayPayment payment;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'payment': payment.toJson(),
+    };
+  }
 }
 
 extension type ApplePayPayment._(JSObject _) implements JSObject {

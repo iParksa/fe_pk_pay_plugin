@@ -250,16 +250,36 @@ class PayWebPlugin extends PayPlatform {
           completer.completeError(Exception('Merchant validation failed: $error'));
         }
       });
-
       session['onpaymentauthorized'] = js.allowInterop((event) async {
         try {
+          debugPrint('onpaymentauthorized event triggered');
           final result = js.JsObject.jsify({'status': session['STATUS_SUCCESS']});
           session.callMethod('completePayment', [result]);
 
-          js.context.callMethod('alert', [event.payment.token.toJson().toString()]);
-
-          //completer.complete(event.payment.token.toJson());
-          completer.complete({"ok": true, "data": event.payment.token.toJson()});
+          // final token = js.JsObject.fromBrowserObject(event as js.JsObject)['payment'] as js.JsObject?;
+          final token =
+              js.JsObject.fromBrowserObject(event as js.JsObject)['payment']['token']['paymentData'] as js.JsObject?;
+          // final token =
+          //     _convertJsObjectToDart(event as js.JsObject)['payment']['token']['paymentData'] as Map<String, dynamic>?;
+          if (token == null) {
+            completer.completeError(Exception('Token is null'));
+            return;
+          }
+          final payment = _convertJsObjectToDart(token);
+          debugPrint("CARLES 1");
+          debugPrint(payment.toString());
+          debugPrint("CARLES 2");
+          // final paymentData = {"token": payment['token']['paymentData']};
+          // debugPrint("CARLES 3");
+          // debugPrint(paymentData.toString());
+          // debugPrint("CARLES 4");
+          // final token2 =
+          //     js.JsObject.fromBrowserObject(event as js.JsObject)['payment']['token']['paymentData'] as js.JsObject?;
+          //debugPrint(_convertJsObjectToDart(token2!).toString());
+          // debugPrint("CARLES 5");
+          // debugPrint(token.toString());
+          // debugPrint("CARLES 6");
+          completer.complete({"token": payment});
         } catch (e) {
           debugPrint('Error in onpaymentauthorized: $e');
           session.callMethod('abort');
