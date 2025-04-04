@@ -6,7 +6,6 @@ import 'package:pay_platform_interface/pay_platform_interface.dart';
 import 'dart:js' as js;
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:dio/dio.dart';
-import 'package:pay_web/src/js_classes/apple_pay_payment.dart';
 
 class PayWebPlugin extends PayPlatform {
   static void registerWith(Registrar registrar) {
@@ -234,10 +233,7 @@ class PayWebPlugin extends PayPlatform {
       final paymentDataRequest = js.JsObject.jsify(paramsData);
 
       // Initialize the ApplePaySession
-      final session = js.JsObject(
-        js.context['ApplePaySession'] as js.JsFunction,
-        [3, paymentDataRequest], // Apple Pay API version (3) and request object
-      );
+      final session = js.JsObject(js.context['ApplePaySession'] as js.JsFunction, [3, paymentDataRequest]);
 
       // Completer to handle the payment flow
       Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
@@ -255,16 +251,15 @@ class PayWebPlugin extends PayPlatform {
         }
       });
 
-      session['onpaymentauthorized'] = js.allowInterop((ApplePayPaymentAuthorizedEvent event) async {
+      session['onpaymentauthorized'] = js.allowInterop((event) async {
         try {
-          final result = js.JsObject.jsify({
-            'status': session['STATUS_SUCCESS'],
-          });
+          final result = js.JsObject.jsify({'status': session['STATUS_SUCCESS']});
           session.callMethod('completePayment', [result]);
 
           js.context.callMethod('alert', [event.payment.token.toJson().toString()]);
 
-          completer.complete(event.payment.token.toJson());
+          //completer.complete(event.payment.token.toJson());
+          completer.complete({"ok": true, "data": event.payment.token.toJson()});
         } catch (e) {
           debugPrint('Error in onpaymentauthorized: $e');
           session.callMethod('abort');
