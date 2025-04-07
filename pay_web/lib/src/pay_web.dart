@@ -6,6 +6,9 @@ import 'package:pay_platform_interface/pay_platform_interface.dart';
 import 'dart:js' as js;
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
+
+import 'js_classes/apple_pay_class.dart';
 
 class PayWebPlugin extends PayPlatform {
   static void registerWith(Registrar registrar) {
@@ -256,30 +259,13 @@ class PayWebPlugin extends PayPlatform {
           final result = js.JsObject.jsify({'status': session['STATUS_SUCCESS']});
           session.callMethod('completePayment', [result]);
 
-          // final token = js.JsObject.fromBrowserObject(event as js.JsObject)['payment'] as js.JsObject?;
           final token =
               js.JsObject.fromBrowserObject(event as js.JsObject)['payment']['token']['paymentData'] as js.JsObject?;
-          // final token =
-          //     _convertJsObjectToDart(event as js.JsObject)['payment']['token']['paymentData'] as Map<String, dynamic>?;
           if (token == null) {
             completer.completeError(Exception('Token is null'));
             return;
           }
-          final payment = _convertJsObjectToDart(token);
-          debugPrint("CARLES 1");
-          debugPrint(payment.toString());
-          debugPrint("CARLES 2");
-          // final paymentData = {"token": payment['token']['paymentData']};
-          // debugPrint("CARLES 3");
-          // debugPrint(paymentData.toString());
-          // debugPrint("CARLES 4");
-          // final token2 =
-          //     js.JsObject.fromBrowserObject(event as js.JsObject)['payment']['token']['paymentData'] as js.JsObject?;
-          //debugPrint(_convertJsObjectToDart(token2!).toString());
-          // debugPrint("CARLES 5");
-          // debugPrint(token.toString());
-          // debugPrint("CARLES 6");
-          completer.complete({"token": payment});
+          completer.complete({"token": jsonEncode(_convertJsObjectPayAppleToDart(token))});
         } catch (e) {
           debugPrint('Error in onpaymentauthorized: $e');
           session.callMethod('abort');
@@ -300,6 +286,44 @@ class PayWebPlugin extends PayPlatform {
       throw Exception('Failed to show Apple Pay payment selector: $e');
     }
   }
+
+  Map<String, dynamic> _convertJsObjectPayAppleToDart(js.JsObject jsObject) {
+    final dartMap = <String, dynamic>{};
+    final keys = js.context['Object'].callMethod('keys', [jsObject]) as List;
+
+    for (final key in keys) {
+      final value = jsObject[key as String];
+
+      if (value is js.JsObject) {
+        final constructorName = value['constructor']?['name'] ?? '';
+
+        if (constructorName == 'Uint8Array') {
+          final length = value['length'] as int;
+          final bytes = List<int>.generate(length, (i) => value[i] as int);
+          dartMap[key] = base64.encode(bytes);
+        } else {
+          dartMap[key] = _convertJsObjectPayAppleToDart(value);
+        }
+      } else if (value is String || value is num || value is bool || value == null) {
+        dartMap[key] = value;
+      } else {
+        dartMap[key] = value.toString();
+      }
+    }
+
+    // Torna un map amb "token" com a string JSON
+    return dartMap;
+  }
+
+  // String encode(data) {
+  //   if (data is String) {
+  //     return base64.encode(utf8.encode(data));
+  //   } else if (data is List<int>) {
+  //     return base64.encode(data);
+  //   } else {
+  //     throw ArgumentError('Unsupported data type for encoding: ${data.runtimeType}');
+  //   }
+  // }
 
   Future<js.JsObject> _validateMerchant(Map<String, dynamic> params, String? validationUrl) async {
     final dio = Dio();
