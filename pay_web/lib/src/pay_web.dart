@@ -8,8 +8,6 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 
-import 'js_classes/apple_pay_class.dart';
-
 class PayWebPlugin extends PayPlatform {
   static void registerWith(Registrar registrar) {
     PayPlatform.instance = PayWebPlugin();
