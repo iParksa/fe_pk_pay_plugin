@@ -26,10 +26,11 @@ if (flutterVersionName == null) {
 android {
     namespace 'io.flutter.plugins.pay_example'
     compileSdk flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     defaultConfig {
         applicationId 'io.flutter.plugins.pay_example'
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
